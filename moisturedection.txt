@@ -1,0 +1,56 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+const int sensorPin = 34; // Analog pin for soil moisture sensor
+const int relayPin = 25;  // Digital pin for relay
+const int ledPin = 26;    // Digital pin for LED
+
+void setup() {
+  pinMode(relayPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("Soil Moisture:");
+  display.display();
+  delay(1000);
+}
+
+void loop() {
+  int moistureLevel = analogRead(sensorPin);
+  int moisturePercentage = map(moistureLevel, 0, 4095, 100, 0); // ESP32 ADC has a range of 0 to 4095
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print("Moisture: ");
+  display.print(moisturePercentage);
+  display.println("%");
+  display.display();
+
+  if (moisturePercentage > 30) {
+    digitalWrite(relayPin, LOW); // Turn on relay
+    digitalWrite(ledPin, HIGH);   // Turn on LED
+  } else {
+    digitalWrite(relayPin, HIGH);  // Turn off relay
+    digitalWrite(ledPin, LOW);    // Turn off LED
+  }
+
+  delay(1000);
+}
